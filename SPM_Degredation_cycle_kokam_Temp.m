@@ -3,9 +3,9 @@
 % SLIDE Kokam NMC parameters
 % Every cycle starts with a different battery temperature independent of ambient temperature.
 
-% clear all
-% close all
-% clc 
+clear all
+close all
+clc 
 
 run Kokam_NMC_parameters
 load('KokamOCVNMC.mat'); %half cell pot.
