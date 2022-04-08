@@ -1,5 +1,4 @@
 %% KOKAM NMC battery SPM model with SEI effect
-% Fitted electrode thicknesses are used. Other parameters are same with the
 % SLIDE Kokam NMC parameters
 % Every cycle starts with a different battery temperature independent of ambient temperature.
 
