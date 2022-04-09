@@ -42,7 +42,7 @@ Un0=p.c_s_n_max*p.theta_n_max*ones(p.Nn-1,1);
 % Temperature
 T10 = 298.15; %Core Temp.
 T20 = 298.15; %Surface Temp.
-Tamb= [268.15 298.15 310.15 328.15]; %Lumped Temp. model is used!!
+Tamb= [268.15 268.15 268.15 328.15]; %Lumped Temp. model is used!!
 
 % SEI
 Qs0=p.eps_s_n*p.Faraday*p.Area_n*p.L_n*p.c_s_n_max*p.theta_n_max;
@@ -131,7 +131,7 @@ if mod(i,2)==1
     for k=1+eventtime(i):eventtime(i+1)
 
     [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
-        k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k), Qreaction(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
+        k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
         =ode_SPMT_discharge(t(k),xcell(k,:)');
     SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
     SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
@@ -145,7 +145,7 @@ else
     for k=1+eventtime(i):eventtime(i+1)
         
     [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
-        k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k), Qreaction(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
+        k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
         =ode_SPMT_charge(t(k),xcell(k,:)');
     SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
     SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
@@ -320,15 +320,16 @@ c_p = A_p*U_p + B_p.*J_p;
 c_n = A_n*U_n + B_n.*js_n;  
 
 %% Heat generation  
-% Qohmic =  -cur.*(V_spm - V_ocv);
-Qohmic =  cur.^2*R_tot_n;
-Qreaction=   cur.*(eta_n - eta_p) ;             
-Qentropic= 0;       %cur*TEMP*(dUpdT-dUndT)./1000  %cur*TEMP*(dudT)./1000
-Qgen= Qohmic + 0 + 0;
+% % Qohmic =  -cur.*(V_spm - V_ocv);
+% Qohmic =  cur.^2*R_tot_n;
+% Qreaction=   cur.*(eta_n - eta_p) ;             
+% Qentropic= 0;       %cur*TEMP*(dUpdT-dUndT)./1000  %cur*TEMP*(dudT)./1000
 
-% Heat remove
-Qremv= p.h*p.A*(T-p.T_amb);
-
+% 
+% % Heat remove
+% Qremv= p.h*p.A*(T-p.T_amb);
+[Qohmic,Qremv]=coolingcontrol(T,cur,R_tot_n,p);
+ Qgen= Qohmic + 0 + 0;
  % Temperature calculation
  T1_dot= Qgen./p.Cc + (T2-T1)./(p.Rc*p.Cc); %Tc core temp
  T2_dot= (p.T_amb-T2)./(p.Ru*p.Cs) - (T2-T1)./(p.Rc*p.Cs); %Ts surface tem. 
@@ -351,14 +352,13 @@ varargout{9} = sn;
 varargout{10}= sp;
 varargout{11}= eta_sei_n;
 varargout{12}= Qohmic;
-varargout{13}= Qreaction;
-varargout{14}= Qremv;
-varargout{15}= T_dot;
-varargout{16}= Q_dot;
-varargout{17}= sei_dot;
-varargout{18}= R_tot_n;
-varargout{19}= BAh;
-varargout{20}= cur;
+varargout{13}= Qremv;
+varargout{14}= T_dot;
+varargout{15}= Q_dot;
+varargout{16}= sei_dot;
+varargout{17}= R_tot_n;
+varargout{18}= BAh;
+varargout{19}= cur;
 end
 
 
@@ -491,20 +491,20 @@ c_n = A_n*U_n + B_n.*js_n;
 
 
 %% Heat generation  
-% Qohmic =  -cur.*(V_spm - V_ocv);
-Qohmic =  cur.^2*R_tot_n;
-Qreaction=   cur.*(eta_n - eta_p) ;             
-Qentropic= 0;       %cur*TEMP*(dUpdT-dUndT)./1000  %cur*TEMP*(dudT)./1000
-Qgen= Qohmic + 0 + 0;
+% % Qohmic =  -cur.*(V_spm - V_ocv);
+% Qohmic =  cur.^2*R_tot_n;
+% Qreaction=   cur.*(eta_n - eta_p) ;             
+% Qentropic= 0;       %cur*TEMP*(dUpdT-dUndT)./1000  %cur*TEMP*(dudT)./1000
 
-% Heat remove
- Qremv= p.h*p.A*(T-p.T_amb);
- 
+% % Heat remove
+%  Qremv= p.h*p.A*(T-p.T_amb);
+ [Qohmic,Qremv]=coolingcontrol(T,cur,R_tot_n,p);
+ Qgen= Qohmic + 0 + 0;
  % Temperature calculation
  T1_dot= Qgen./p.Cc + (T2-T1)./(p.Rc*p.Cc); %Tc core temp
  T2_dot= (p.T_amb-T2)./(p.Ru*p.Cs) - (T2-T1)./(p.Rc*p.Cs); %Ts surface tem. 
 
- % Lumped Temperature calculation
+% Lumped Temperature calculation
 %  T_dot= (1/p.rho/p.Cp)*(Qgen  - Qremv);
 
  T_dot= (Qgen  - Qremv)./(p.M*p.Cp);
@@ -525,14 +525,13 @@ varargout{9} = sn;
 varargout{10}= sp;
 varargout{11}= eta_sei_n;
 varargout{12}= Qohmic;
-varargout{13}= Qreaction;
-varargout{14}= Qremv;
-varargout{15}= T_dot;
-varargout{16}= Q_dot;
-varargout{17}= sei_dot;
-varargout{18}= R_tot_n;
-varargout{19}= BAh;
-varargout{20}= cur;
+varargout{13}= Qremv;
+varargout{14}= T_dot;
+varargout{15}= Q_dot;
+varargout{16}= sei_dot;
+varargout{17}= R_tot_n;
+varargout{18}= BAh;
+varargout{19}= cur;
 end
 
 
