@@ -22,7 +22,7 @@ global OCVcell
 
 % Discharge only
  p.C_rate= 1;
- p.cycle_number=3;
+ p.cycle_number=1;
  p.Nc= p.cycle_number*2;
 
 tend= 3600*p.Nc/p.C_rate;
@@ -65,6 +65,7 @@ cp0=p.c_s_p_max*p.theta_p_min;
 Tin=T0(1);
 x0=x;
 t0=t;
+p.T_amb=298.15;
 for j=1:length(T0)
 
     T0now=T0(j);
