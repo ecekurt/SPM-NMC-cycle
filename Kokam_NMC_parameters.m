@@ -86,7 +86,7 @@ p.Cc=62.7; %Heat capacity J/K (core)
 p.Cs=4.5; %Heat capacity J/K (surface)   
 p.Rc=1.83;  % equiv. conduction resistance between core and surface
 p.Ru=3.3;  % equiv. conduction resistance around the cell Ru=1/(h*A)
-p.h= 0; % 5-10 for free convection air cooling %10-70 for forced air cooling W/(m2 K)
+p.h= 30; % 5-10 for free convection air cooling %10-70 for forced air cooling W/(m2 K)
 p.A=  0.0042; %Cell area
 p.M= 0.07;  % Cell mass [kg]
 p.rho= 1626; 
