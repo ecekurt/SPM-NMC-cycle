@@ -1,8 +1,6 @@
 %% KOKAM NMC battery SPM model with SEI effect
 % SLIDE Kokam NMC parameters
-% Every cycle starts with a different battery temperature independent of
-% ambient temperature. Convection coefficient h [W/(m2 K)] control is
-% added. 
+% Every cycle starts with a different battery temperature independent of ambient temperature.
 
 clear all
 close all
@@ -24,7 +22,7 @@ global OCVcell
 
 % Discharge only
  p.C_rate= 1;
- p.cycle_number=3;
+ p.cycle_number=1;
  p.Nc= p.cycle_number*2;
 
 tend= 3600*p.Nc/p.C_rate;
@@ -44,7 +42,7 @@ Un0=p.c_s_n_max*p.theta_n_max*ones(p.Nn-1,1);
 % Temperature
 T10 = 298.15; %Core Temp.
 T20 = 298.15; %Surface Temp.
-T0= [268.15 298.15 310.15 328.15]; %Lumped Temp. model is used!!
+Tamb= [268.15 298.15 310.15 328.15]; %Lumped Temp. model is used!!
 
 % SEI
 Qs0=p.eps_s_n*p.Faraday*p.Area_n*p.L_n*p.c_s_n_max*p.theta_n_max;
@@ -55,22 +53,18 @@ sei0=p.L_sei;
 % set up starting equation    
 tspan=0:1:tend;
 t=tspan(1);
-x = [Un0; Up0; T10; T20; T0(1);Qs0; sei0]';
+x = [Un0; Up0; T10; T20; Tamb(1);Qs0; sei0]';
 func=@ode_SPMT_discharge;
 options=odeset('Events',@Efcn); 
 
 eventtime=[];
 eventtime(1)=0;
-
-cn0=p.c_s_n_max*p.theta_n_max;
-cp0=p.c_s_p_max*p.theta_p_min;
-Tin=T0(1);
 x0=x;
-t0=t;
-for j=1:length(T0)
+for j=1:length(Tamb)
 
-    T0now=T0(j);
-    x(:,end-2)=T0now;
+    Tcell=Tamb(j);
+    p.T_amb=Tcell;
+    x(:,end-2)=Tcell;
 
      a=0;
     while t(end) < tend % main loop
@@ -104,31 +98,32 @@ for j=1:length(T0)
             end
 
              a=a+1;
-        
-        cn=cat(1,cn0,ax(2:end,(p.Nn-1)));
-        cn0=cn;
-        cp=cat(1,cp0,ax(2:end,2*(p.Nn-1)));
-        cp0=cp;
-        Tcell=cat(1,Tin,ax(2:end,end-2));
-        Tin=Tcell;
+             
         xcell=cat(1,x0,ax(2:end,:));
         x0=xcell;
-        tsim=cat(1,t0,at(2:end));
-        t0=tsim;
+        
     end
        
-%         Capacityloss= x(:,end-1);
-%         seigrowth= x(:,end);
         x=xcell(end,:);
-%  x = [cn(end)*ones(p.Nn-1,1); cp(end)*ones(p.Np-1,1); T10; T20; T0(j);Capacityloss(end); seigrowth(end)]';
- tend=t(end)+7200*p.cycle_number;
+        
+        tend=t(end)+7200*p.cycle_number;
 
  
 end
 
 
 % % Extract data
-for i=1:length(T0)*p.Nc
+
+c_n = xcell(:,(p.Nn-1));
+c_p = xcell(:,2*(p.Nn-1));
+T1 = xcell(:,end-4);
+T2 = xcell(:,end-3);
+Tcell  = xcell(:,end-2);
+Capacityloss= xcell(:,end-1);
+seigrowth= xcell(:,end);
+
+
+for i=1:length(Tamb)*p.Nc
   duration=diff(eventtime);
 if mod(i,2)==1
         
