@@ -2,6 +2,7 @@
 % SLIDE Kokam NMC parameters
 % Every cycle starts with a different battery temperature independent of ambient temperature.
 
+
 clear all
 close all
 clc 
