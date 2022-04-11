@@ -1,6 +1,7 @@
 %% KOKAM NMC battery SPM model with SEI effect
 % SLIDE Kokam NMC parameters
 % Every cycle starts with a different battery temperature independent of ambient temperature.
+% Cooling control was added. Temperature is controled by adjusting the convection coefficient h[W/(m2 K)]. 
 
 
 clear all
