@@ -213,7 +213,7 @@ Q_s= real(x(end-1));
 sei = real(x(end));
 
 
-cur=data.Current(t);
+cur=interp1(data.time,data.cur,t,[]);
 
 
 TEMP=T;
@@ -385,7 +385,7 @@ Q_s= real(x(end-1));
 sei = real(x(end));
 
 
-cur=-data.Current(t);
+cur=-interp1(data.time,data.cur,t,[]);
 
 
 TEMP=T;
