@@ -14,6 +14,9 @@ load('KokamOCVC.mat');  %half cell pt.
 load('OCVcell.mat');  %overall cell ocv vs Ah
 load('KokamNMC.mat'); 
 load('KokamC.mat');   
+
+load('cur.mat');
+
 global data 
 global p
 global KokamOCVNMC KokamNMC 
