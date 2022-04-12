@@ -15,7 +15,7 @@ load('OCVcell.mat');  %overall cell ocv vs Ah
 load('KokamNMC.mat'); 
 load('KokamC.mat');   
 
-load('cur.mat');
+load('cur.mat'); % dynamic input current
 
 global data 
 global p
@@ -30,9 +30,10 @@ global OCVcell
  p.cycle_number=1;
  p.Nc= p.cycle_number*2;
 
-tend= 3600*p.Nc/p.C_rate;
-data.Current=@(t) 0*(t==0) - 2.7*(t<=1) + p.C_rate*2.7*(1<=tend);
+data.cur=cur;
+data.time=1:length(cur);
 
+tend= length(cur);
 %% Finite difference for spherical particle and electrolyte
 p.Np=50;
 p.Nn=50;
@@ -92,15 +93,15 @@ for j=1:length(Tamb)
 
 
             % Decide for new function and event function
-            if (x(end,49) <= p.c_s_n_max*p.theta_n_min || x(end,98) >= p.c_s_p_max*p.theta_p_max  )
-                func=@ode_SPMT_charge;
-                options=odeset('Events',@Efcn1);    
-                
-                elseif(x(end,49) > 1000)
-                func=@ode_SPMT_discharge;
-                options=odeset('Events',@Efcn);     
-
-            end
+%             if (x(end,49) <= p.c_s_n_max*p.theta_n_min || x(end,98) >= p.c_s_p_max*p.theta_p_max  )
+%                 func=@ode_SPMT_charge;
+%                 options=odeset('Events',@Efcn1);    
+%                 
+%                 elseif(x(end,49) > 1000)
+%                 func=@ode_SPMT_discharge;
+%                 options=odeset('Events',@Efcn);     
+% 
+%             end
 
              a=a+1;
              
@@ -111,7 +112,7 @@ for j=1:length(Tamb)
        
         x=xcell(end,:);
         
-        tend=t(end)+7200*p.cycle_number;
+        tend=t(end)+length(cur)*p.cycle_number;
 
  
 end
@@ -213,7 +214,7 @@ Q_s= real(x(end-1));
 sei = real(x(end));
 
 
-cur=data.Current(t);
+cur=interp1(data.time,data.cur,t,[]);
 
 
 TEMP=T;
@@ -385,7 +386,7 @@ Q_s= real(x(end-1));
 sei = real(x(end));
 
 
-cur=-data.Current(t);
+cur=-interp1(data.time,data.cur,t,[]);
 
 
 TEMP=T;
