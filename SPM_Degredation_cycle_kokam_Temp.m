@@ -42,7 +42,7 @@ Un0=p.c_s_n_max*p.theta_n_max*ones(p.Nn-1,1);
 % Temperature
 T10 = 298.15; %Core Temp.
 T20 = 298.15; %Surface Temp.
-T0= [268.15 298.15 310.15 328.15]; %Lumped Temp. model is used!!
+T0= [268.15 268.15 268.15 328.15]; %Lumped Temp. model is used!!
 
 % SEI
 Qs0=p.eps_s_n*p.Faraday*p.Area_n*p.L_n*p.c_s_n_max*p.theta_n_max;
@@ -60,15 +60,15 @@ options=odeset('Events',@Efcn);
 eventtime=[];
 eventtime(1)=0;
 
-cn0=p.c_s_n_max*p.theta_n_max;
-cp0=p.c_s_p_max*p.theta_p_min;
+
 Tin=T0(1);
 x0=x;
-t0=t;
-p.T_amb=298.15;
+
+
 for j=1:length(T0)
 
     T0now=T0(j);
+    p.T_amb=T0now;
     x(:,end-2)=T0now;
 
      a=0;
@@ -104,23 +104,17 @@ for j=1:length(T0)
 
              a=a+1;
         
-        cn=cat(1,cn0,ax(2:end,(p.Nn-1)));
-        cn0=cn;
-        cp=cat(1,cp0,ax(2:end,2*(p.Nn-1)));
-        cp0=cp;
-        Tcell=cat(1,Tin,ax(2:end,end-2));
-        Tin=Tcell;
+       
+
         xcell=cat(1,x0,ax(2:end,:));
         x0=xcell;
-        tsim=cat(1,t0,at(2:end));
-        t0=tsim;
+
     end
        
-%         Capacityloss= x(:,end-1);
-%         seigrowth= x(:,end);
+
         x=xcell(end,:);
-%  x = [cn(end)*ones(p.Nn-1,1); cp(end)*ones(p.Np-1,1); T10; T20; T0(j);Capacityloss(end); seigrowth(end)]';
- tend=t(end)+7200*p.cycle_number;
+
+     tend=t(end)+7200*p.cycle_number;
 
  
 end
