@@ -84,8 +84,8 @@ for j=1:length(Tamb)
             end
 
             % Append the new trajectory
-            t = cat(1, t, at(2:end)); 
-            x = cat(1, x, ax(2:end,:)); 
+            t = cat(1, t, at(1:end)); 
+            x = cat(1, x, ax(1:end,:)); 
 
 
             % Decide for new function and event function
@@ -101,11 +101,30 @@ for j=1:length(Tamb)
 
              a=a+1;
              
-        xcell=cat(1,x0,ax(2:end,:));
+        xcell=cat(1,x0,ax(1:end,:));
         x0=xcell;
         
     end
-       
+    
+        for k=1:length(t)
+
+    [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
+        k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
+        =ode_SPMT_discharge(t(k),xcell(k,:)');
+    SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
+    SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
+    
+        end
+        
+        for k=1:length(t)
+
+    [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
+        k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
+        =ode_SPMT_charge(t(k),xcell(k,:)');
+    SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
+    SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
+    
+        end
         x=xcell(end,:);
         
         tend=t(end)+7200*p.cycle_number;
@@ -125,39 +144,39 @@ Capacityloss= xcell(:,end-1);
 seigrowth= xcell(:,end);
 
 
-for i=1:length(Tamb)*p.Nc
-  duration=diff(eventtime);
-if mod(i,2)==1
-        
-    
-    for k=1+eventtime(i):eventtime(i+1)
-
-    [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
-        k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
-        =ode_SPMT_discharge(t(k),xcell(k,:)');
-    SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
-    SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
-    
-    end
-
-  
-else
-      
-        
-    for k=1+eventtime(i):eventtime(i+1)
-        
-    [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
-        k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
-        =ode_SPMT_charge(t(k),xcell(k,:)');
-    SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
-    SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
-    
-    end
-       
-end
-Ah(i)=integral(data.Current,0,duration(i));
-
-end
+% for i=1:length(Tamb)*p.Nc
+%   duration=diff(eventtime);
+% if mod(i,2)==1
+%         
+%     
+%     for k=1+eventtime(i):eventtime(i+1)
+% 
+%     [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
+%         k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
+%         =ode_SPMT_discharge(t(k),xcell(k,:)');
+%     SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
+%     SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
+%     
+%     end
+% 
+%   
+% else
+%       
+%         
+%     for k=1+eventtime(i):eventtime(i+1)
+%         
+%     [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
+%         k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
+%         =ode_SPMT_charge(t(k),xcell(k,:)');
+%     SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
+%     SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
+%     
+%     end
+%        
+% end
+% Ah(i)=integral(data.Current,0,duration(i));
+% 
+% end
 
  Qp=(p.Area_p*p.L_p*p.Faraday*p.eps_s_p*p.c_s_p_max*p.theta_p_max)/3600;
  Qn=(p.Area_n*p.L_n*p.Faraday*p.eps_s_n*p.c_s_n_max*p.theta_n_max)/3600;
