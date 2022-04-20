@@ -26,7 +26,7 @@ global OCVcell
  p.Nc= p.cycle_number*2;
 
 tend= 3600*p.Nc/p.C_rate;
-data.Current=@(t) 0*(t==0) - 2.7*(t<=1) + p.C_rate*2.7*(1<=tend);
+data.Current=@(t) 0*(t==0) - 2.7*(t<=1) + 2.7*(1<=tend);
 
 %% Finite difference for spherical particle and electrolyte
 p.Np=50;
