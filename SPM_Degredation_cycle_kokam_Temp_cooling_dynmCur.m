@@ -26,16 +26,15 @@ global OCVcell
 %% Constant current input
 
 % Discharge only
- p.C_rate= 1;
+ p.C_rate= 0.556;
  p.cycle_number=2;
  p.Nc= p.cycle_number*2;
 
-data.cur=cur; %dynamic current
-tend_chr= 3600;
-
-data.chrcur=@(t) 0*(t==0) - 2.7*(t<=1) + 2.7*(1<=tend_chr); % charge current - constant charge
+tend_chr= 3600*p.Nc/p.C_rate;
+data.chrcur=@(t) 0*(t==0) - 2.7*p.C_rate*(t<=1) + 2.7*p.C_rate*(1<=tend_chr); % charge current - constant charge
 data.chrtime=1:tend_chr;
 
+data.cur=cur; %dynamic current
 data.time=1:length(cur);
 
 tend= length(cur);
@@ -64,18 +63,18 @@ sei0=p.L_sei;
 % set up starting equation    
 tspan=0:1:tend;
 t=tspan(1);
-x = [Un0; Up0; T10; T20; Tamb(1);Qs0; sei0]';
+x0 = [Un0; Up0; T10; T20; Tamb(1);Qs0; sei0]';
 func=@ode_SPMT_discharge;
 options=odeset('Events',@Efcn); 
 
 eventtime=[];
 eventtime(1)=0;
-x0=x;
+% x0=x;
 for j=1:length(Tamb)
 
     Tcell=Tamb(j);
     p.T_amb=Tcell;
-    x(:,end-2)=Tcell;
+    x0(:,end-2)=Tcell;
 
      a=0;
      while a < p.cycle_number % main loop
@@ -85,7 +84,7 @@ for j=1:length(Tamb)
             end
 
             % Run integration until event function stops it
-            [at,ax,ate,aye,aie] = ode23s(func,[1:tend],x(end, :),options); 
+            [at,ax,ate,aye,aie] = ode23s(func,[1:tend],x0(end, :),options); 
 
 
 %             if ~isempty(ate)
@@ -94,14 +93,14 @@ for j=1:length(Tamb)
 
             % Append the new trajectory
             t = cat(1, t, at(2:end)); 
-            x = cat(1, x, ax(2:end,:)); 
+            x = cat(1, x0, ax(2:end,:)); 
 
 
             %Decide for new function and event function
             if (x(end,49) <= 11500 || x(end,98) >= p.c_s_p_max*p.theta_p_max  )
                 options=odeset('Events',@Efcn1);    
-                [ts,xch] = ode23s(@ode_SPMT_charge,[1:tend_chr],x(end, :),options); 
-                 
+                [at,ax] = ode23s(@ode_SPMT_charge,[1:tend_chr],x(end, :),options); 
+          
                 
                 elseif(x(end,49) > 1000)
                 func=@ode_SPMT_discharge;
@@ -111,12 +110,13 @@ for j=1:length(Tamb)
 
              a=a+1;
              
-        xcell=cat(1,x0,ax(2:end,:));
+        xcell=cat(1,x,ax(2:end,:));
         x0=xcell;
+        t = cat(1, t, at(2:end));
         
      end
        
-        x=xch(end,:);
+%         x=xch(end,:);
         
        
 
