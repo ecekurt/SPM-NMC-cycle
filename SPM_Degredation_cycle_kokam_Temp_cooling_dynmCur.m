@@ -26,7 +26,7 @@ global OCVcell
 %% Constant current input
 
 % Discharge only
- p.C_rate= 1;
+ p.C_rate= 0.556;
  p.cycle_number=2;
  p.Nc= p.cycle_number*2;
 
@@ -63,7 +63,7 @@ sei0=p.L_sei;
  
 % set up starting equation    
 tspan=0:1:tend;
-t=tspan(1);
+t0=tspan(1);
 x = [Un0; Up0; T10; T20; Tamb(1);Qs0; sei0]';
 func=@ode_SPMT_discharge;
 options=odeset('Events',@Efcn); 
@@ -95,20 +95,21 @@ for j=1:length(Tamb)
 %             end
 
             % Append the new trajectory
-            t = cat(1, t, at(2:end)); 
+            t = cat(1, t0, at(2:end)); 
             x = cat(1, x, ax(2:end,:)); 
 
 
             %Decide for new function and event function
             if (x(end,49) <= 11500 || x(end,98) >= p.c_s_p_max*p.theta_p_max)
                 options=odeset('Events',@Efcn1);    
-                [ts,xch] = ode23s(@ode_SPMT_charge,[1:tend_chr],x(end, :),options); 
+                [tch,xch] = ode23s(@ode_SPMT_charge,[1:tend_chr],x(end, :),options); 
                 xcell=cat(1,x,xch(1:end,:));
-                
+                tsim = cat(1, t, tch(2:end)); 
                 elseif(x(end,49) > 1000)
                 options=odeset('Events',@Efcn); 
                 func=@ode_SPMT_discharge;
                 xcell=cat(1,x,ax(1:end,:));
+                tsim = cat(1, t, at(2:end)); 
             end
 
              a=a+1;
@@ -119,9 +120,10 @@ for j=1:length(Tamb)
      end
        
         x=xcell(end,:);
-        
-       
-
+        xtotal=cat(1, x0, xcell(1:end,:));
+        x0=xtotal;
+        ttotal=cat(1,t0,tsim(2:end));
+        t0=ttotal;
  
 end
 
@@ -138,17 +140,17 @@ seigrowth= xcell(:,end);
 
 
 for i=1:length(Tamb)*p.Nc
-    for k=1:length(t)
+    for k=1:length(xtotal)
     [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
         k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
-        =ode_SPMT_discharge(t(k),xcell(k,:)');
+        =ode_SPMT_discharge(t(k),xtotal(k,:)');
     SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
     SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
     end
-        for k=1:length(t)
+        for k=1:length(xtotal)
     [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
         k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
-        =ode_SPMT_charge(t(k),xcell(k,:)');
+        =ode_SPMT_charge(t(k),xtotal(k,:)');
     SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
     SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
     end
