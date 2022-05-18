@@ -22,7 +22,7 @@ global OCVcell
 
 % Discharge only
  p.C_rate= 1;
- p.cycle_number=4;
+ p.cycle_number=50;
  p.Nc= p.cycle_number*2;
 
 tend= 3600*p.Nc/p.C_rate;
@@ -39,7 +39,7 @@ p.delta_n =  p.R_n/(p.Nn);
 
 Up0=p.c_s_p_max*p.theta_p_min*ones(p.Np-1,1);             
 Un0=p.c_s_n_max*p.theta_n_max*ones(p.Nn-1,1);            
-
+p.T_amb=310.15;
 % Temperature
 T10 = p.T_amb;
 T20 = p.T_amb;
@@ -312,7 +312,7 @@ Qentropic= 0;       %cur*TEMP*(dUpdT-dUndT)./1000  %cur*TEMP*(dudT)./1000
 Qgen= Qohmic + 0 + 0;
 
 % Heat remove
-Qremv= p.h*p.A*(T-p.T_amb);
+Qremv= p.h*p.A*(T-298.15);
 
  % Temperature calculation
  T1_dot= Qgen./p.Cc + (T2-T1)./(p.Rc*p.Cc); %Tc core temp
@@ -484,7 +484,7 @@ Qgen= Qohmic + 0 + 0;
 
 % Heat remove
 
-Qremv= p.h*p.A*(T-p.T_amb);
+Qremv= p.h*p.A*(T-298.15);
 
  % Temperature calculation
  T1_dot= Qgen./p.Cc + (T2-T1)./(p.Rc*p.Cc); %Tc core temp
