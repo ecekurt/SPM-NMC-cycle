@@ -7,12 +7,12 @@ fan_onoff_flag=0;
 if  T>=temp_fan_on
     fan_onoff_flag=1;
     Qohmic =  cur.^2*R_tot_n;
-    Qremv= p.h*p.A*(T-298.15);   
+    Qremv= p.h*p.A*(T-p.T_cool);   
 
 elseif T<temp_fan_on && T>=temp_fan_off && fan_onoff_flag==1
     fan_onoff_flag=1;
     Qohmic =  cur.^2*R_tot_n;
-    Qremv=p.h*p.A*(T-298.15); %T_amb= T_cool 
+    Qremv=p.h*p.A*(T-p.T_cool); %T_amb= T_cool 
 
 else
     fan_onoff_flag=0;
