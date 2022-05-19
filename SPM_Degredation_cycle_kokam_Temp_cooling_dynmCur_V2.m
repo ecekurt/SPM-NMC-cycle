@@ -53,7 +53,7 @@ Un0=p.c_s_n_max*p.theta_n_max*ones(p.Nn-1,1);
 % Temperature
 T10 = 298.15; %Core Temp.
 T20 = 298.15; %Surface Temp.
-Tamb= [288.15 300.15]; %Lumped Temp. model is used!!
+DailyT= [298.15 300.15]; %Lumped Temp. model is used!!
 
 % SEI
 Qs0=p.eps_s_n*p.Faraday*p.Area_n*p.L_n*p.c_s_n_max*p.theta_n_max;
@@ -64,66 +64,52 @@ sei0=p.L_sei;
 % set up starting equation    
 tspan=0:1:tend;
 t0=tspan(1);
-x = [Un0; Up0; T10; T20; Tamb(1);Qs0; sei0]';
+x0 = [Un0; Up0; T10; T20; DailyT(1);Qs0; sei0]';
 func=@ode_SPMT_discharge;
 options=odeset('Events',@Efcn); 
+% 
+% eventtime=[];
+% eventtime(1)=0;
+% x0=x;
 
-eventtime=[];
-eventtime(1)=0;
-x0=x;
+for j=1:length(DailyT)
 
-for j=1:length(Tamb)
-
-    Tcell=Tamb(j);
-    p.T_amb=Tcell;
-    x(:,end-2)=Tcell;
-
-     a=0;
-     while a < p.cycle_number % main loop
-
-            if a>=p.cycle_number*2
-                break
-            end
-
-            % Run integration until event function stops it
-            options=odeset('Events',@Efcn);
-            [at,ax,ate,aye,aie] = ode23s(func,[1:tend],x(end, :),options); 
+T0=DailyT(j);
+x0(:,end-2)=T0;
 
 
-%             if ~isempty(ate)
-%             eventtime=[eventtime,round(ate)];
-%             end
+% Run integration until event function stops it
+[tdch,xdch] = ode23s(func,[1:tend],x0,options); 
 
-            % Append the new trajectory
-            t = cat(1, t0, at(2:end)); 
-            x = cat(1, x, ax(2:end,:)); 
+    for k=1:length(tdch)
+    [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), eta_n(k), eta_p(k), ...
+         eta_sei_n(k), Qohmic(k),Qremv(k),R_tot_n(k),cur(k)]...
+        =ode_SPMT_discharge(tdch(k),xdch(k,:)');
+    SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
+    SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
 
+    day(j).profile1.spmvoltage(k)=V_spm(k);
+    day(j).profile1.theta_n(k)=theta_n(k);
 
-            %Decide for new function and event function
-            if (x(end,49) <= p.c_s_n_max*p.theta_n_min || x(end,98) >= p.c_s_p_max*p.theta_p_max)
-                options=odeset('Events',@Efcn1);    
-                [tch,xch] = ode23s(@ode_SPMT_charge,[1:tend_chr],x(end, :),options); 
-                xcell=cat(1,x,xch(1:end,:));
-                tsim = cat(1, t, tch(2:end)); 
-                elseif(x(end,49) > 1000)
-                options=odeset('Events',@Efcn); 
-                func=@ode_SPMT_discharge;
-                xcell=cat(1,x,ax(1:end,:));
-                tsim = cat(1, t, at(2:end)); 
-            end
+    end
 
-             a=a+1;
-             
         
-        x=xcell;
+%Decide for new function and event function
+% if (x(end,49) <= p.c_s_n_max*p.theta_n_min || x(end,98) >= p.c_s_p_max*p.theta_p_max)
+% 
+%     options=odeset('Events',@Efcn1);    
+%     [tch,xch] = ode23s(@ode_SPMT_charge,[1:tend_chr],x(end, :),options); 
+%     
+% 
+%     elseif(x(end,49) > 1000)
+% 
+%     options=odeset('Events',@Efcn); 
+%     func=@ode_SPMT_discharge;
+%     
+% 
+% end
 
-     end
-       
-        x=xcell(end,:);
-        xtotal=cat(1, x0, xcell(1:end,:));
-        x0=xtotal;
-        ttotal=cat(1,t0,tsim(2:end));
-        t0=ttotal;
+    
  
 end
 
@@ -139,22 +125,22 @@ Capacityloss= xcell(:,end-1);
 seigrowth= xcell(:,end);
 
 
-for i=1:length(Tamb)*p.Nc
-    for k=1:length(xtotal)
-    [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
-        k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
-        =ode_SPMT_discharge(t(k),xtotal(k,:)');
-    SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
-    SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
-    end
-        for k=1:length(xtotal)
-    [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
-        k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
-        =ode_SPMT_charge(t(k),xtotal(k,:)');
-    SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
-    SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
-    end
-end
+% for i=1:length(Tamb)*p.Nc
+%     for k=1:length(xtotal)
+%     [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
+%         k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
+%         =ode_SPMT_discharge(t(k),xtotal(k,:)');
+%     SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
+%     SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
+%     end
+%         for k=1:length(xtotal)
+%     [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
+%         k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
+%         =ode_SPMT_charge(t(k),xtotal(k,:)');
+%     SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
+%     SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
+%     end
+% end
 % Ah(i)=integral(data.Current,0,duration(i));
 
 
@@ -246,11 +232,6 @@ BAh =cur*t/3600;
 sp = cur * t / (p.Faraday) / (p.eps_s_p*p.L_p*p.Area_p) / p.c_s_p_max;
 sn = cur * t / (p.Faraday) / (p.eps_s_n*p.L_n*p.Area_n) / p.c_s_n_max;
 
-%% cell OCV
-% cell_Ah=OCVcell(:,1);
-% cell_OCV=OCVcell(:,2);
-% V_ocv= interp1(cell_Ah,cell_OCV,Ah,'linear'); % Ah charge sırasında eksi oluyor!!!
-
 %% OCV 
 
 [Uref_p, Uref_n]=refpotantial (theta_p, theta_n,KokamOCVNMC, KokamNMC, KokamOCVC, KokamC, OCVcell);
@@ -274,11 +255,11 @@ sn = cur * t / (p.Faraday) / (p.eps_s_n*p.L_n*p.Area_n) / p.c_s_n_max;
 % Overpotentials
  RTaF=(p.R*TEMP)./(p.alph*p.Faraday);
  
-%  eta_n  = RTaF .* asinh(cur ./ (2.*p.a_n.*p.Area_n.*p.L_n.*i_0n));
-%  eta_p  = RTaF .* asinh(-cur ./ (2.*p.a_p.*p.Area_p.*p.L_p.*i_0p));
+ eta_n  = RTaF .* asinh(cur ./ (2.*p.a_n.*p.Area_n.*p.L_n.*i_0n));
+ eta_p  = RTaF .* asinh(-cur ./ (2.*p.a_p.*p.Area_p.*p.L_p.*i_0p));
 
-eta_p=(2*p.R*TEMP)/p.Faraday * log(xp + sqrt(1+xp*xp));
-eta_n=(2*p.R*TEMP)/p.Faraday * log(xn + sqrt(1+xn*xn));
+% eta_p=(2*p.R*TEMP)/p.Faraday * log(xp + sqrt(1+xp*xp));
+% eta_n=(2*p.R*TEMP)/p.Faraday * log(xn + sqrt(1+xn*xn));
 
 % SPM Voltage
  V_spm= eta_p - eta_n + V_ocv;
@@ -334,7 +315,7 @@ c_n = A_n*U_n + B_n.*js_n;
  Qgen= Qohmic + 0 + 0;
  % Temperature calculation
  T1_dot= Qgen./p.Cc + (T2-T1)./(p.Rc*p.Cc); %Tc core temp
- T2_dot= (p.T_amb-T2)./(p.Ru*p.Cs) - (T2-T1)./(p.Rc*p.Cs); %Ts surface tem. 
+ T2_dot= (p.T_cool-T2)./(p.Ru*p.Cs) - (T2-T1)./(p.Rc*p.Cs); %Ts surface tem. 
 
  % Lumped Temperature calculation
 %  T_dot= (1/p.rho/p.Cp)*(Qgen  - Qremv);
@@ -346,21 +327,13 @@ varargout{1} = theta_p;
 varargout{2} = theta_n;
 varargout{3} = V_spm;
 varargout{4} = V_ocv;
-varargout{5} = p.Ds_n;
-varargout{6} = p.Ds_p;
-varargout{7} = p.k_n;
-varargout{8} = p.k_p;
-varargout{9} = sn;
-varargout{10}= sp;
-varargout{11}= eta_sei_n;
-varargout{12}= Qohmic;
-varargout{13}= Qremv;
-varargout{14}= T_dot;
-varargout{15}= Q_dot;
-varargout{16}= sei_dot;
-varargout{17}= R_tot_n;
-varargout{18}= BAh;
-varargout{19}= cur;
+varargout{5} = eta_n;
+varargout{6} = eta_p;
+varargout{7}= eta_sei_n;
+varargout{8}= Qohmic;
+varargout{9}= Qremv;
+varargout{10}= R_tot_n;
+varargout{11}= cur;
 end
 
 
@@ -504,7 +477,7 @@ c_n = A_n*U_n + B_n.*js_n;
  Qgen= Qohmic + 0 + 0;
  % Temperature calculation
  T1_dot= Qgen./p.Cc + (T2-T1)./(p.Rc*p.Cc); %Tc core temp
- T2_dot= (p.T_amb-T2)./(p.Ru*p.Cs) - (T2-T1)./(p.Rc*p.Cs); %Ts surface tem. 
+ T2_dot= (p.T_cool-T2)./(p.Ru*p.Cs) - (T2-T1)./(p.Rc*p.Cs); %Ts surface tem. 
 
 % Lumped Temperature calculation
 %  T_dot= (1/p.rho/p.Cp)*(Qgen  - Qremv);
