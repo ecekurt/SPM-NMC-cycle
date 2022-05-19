@@ -80,7 +80,7 @@ p.theta_p_max=0.8799;           % Max soc of the positive electrode
 % p.theta_p_max=0.9;           % Max soc of the positive electrode
 
 %% Thermodynamic Properties
-
+p.T_cool=298.15;
 p.Cp=750; %Heat capacity [Jkg^-1K^-1]   
 p.Cc=62.7; %Heat capacity J/K (core) 
 p.Cs=4.5; %Heat capacity J/K (surface)   
