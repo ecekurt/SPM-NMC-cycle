@@ -26,7 +26,7 @@ global OCVcell
 %% Constant current input
 
 % Discharge only
- p.C_rate= 1;
+ p.C_rate= 0.556;
  p.cycle_number=2;
  p.Nc= p.cycle_number*2;
 
@@ -96,11 +96,11 @@ for j=1:length(Tamb)
 
             % Append the new trajectory
             t = cat(1, t0, at(2:end)); 
-            x = cat(1, x, ax(2:end,:)); 
+            x = cat(1, x, ax(1:end,:)); 
 
 
             %Decide for new function and event function
-            if (x(end,49) <= 11500 || x(end,98) >= p.c_s_p_max*p.theta_p_max)
+            if (x(end,49) <= p.c_s_n_max*p.theta_n_min || x(end,98) >= p.c_s_p_max*p.theta_p_max)
                 options=odeset('Events',@Efcn1);    
                 [tch,xch] = ode23s(@ode_SPMT_charge,[1:tend_chr],x(end, :),options); 
                 xcell=cat(1,x,xch(1:end,:));
@@ -540,7 +540,7 @@ end
 function [check,isterminal,direction]=Efcn(t,x)
 global p
 
-check= x(49) <= 11500 || x(98) >= p.c_s_p_max*p.theta_p_max ; %theta_n_min=0.0316 Vmin=2.7 
+check= x(49) <= p.c_s_n_max*p.theta_n_min || x(98) >= p.c_s_p_max*p.theta_p_max ; %theta_n_min=0.0316 Vmin=2.7 
 direction=[];
 isterminal=1;
     
