@@ -22,7 +22,7 @@ global OCVcell
 
 % Discharge only
  p.C_rate= 1;
- p.cycle_number=50;
+ p.cycle_number=500;
  p.Nc= p.cycle_number*2;
 
 tend= 3600*p.Nc/p.C_rate;
@@ -39,7 +39,7 @@ p.delta_n =  p.R_n/(p.Nn);
 
 Up0=p.c_s_p_max*p.theta_p_min*ones(p.Np-1,1);             
 Un0=p.c_s_n_max*p.theta_n_max*ones(p.Nn-1,1);            
-p.T_amb=310.15;
+p.T_amb=298.15;
 % Temperature
 T10 = p.T_amb;
 T20 = p.T_amb;
