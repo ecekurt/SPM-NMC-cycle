@@ -119,7 +119,7 @@ p.E.kp= 58e3;
 %% Aging submodel parameters
 
 p.kappa_s = 17e-5;  %1;     % [S/m] conductivity of side rxn product
-p.ksei= 0.075e-14;    % [m/s^-1] neg.side kinetic rate of side rxn product adopted from Howey
+p.ksei= 0.900e-14; %0.075e-14;    % [m/s^-1] neg.side kinetic rate of side rxn product adopted from Howey
 
 p.Msei= 0.162;       % [kg/mol] molecular weight of side rxn product adopted from Delecourt
 p.rhos= 100e3;        % [kg/m^3] mass density of side rxn product
