@@ -14,7 +14,7 @@ load('KokamOCVC.mat');  %half cell pt.
 load('OCVcell.mat');  %overall cell ocv vs Ah
 load('KokamNMC.mat'); 
 load('KokamC.mat');   
-
+load('DailyTemp_PHOENIX.mat');
 load('cur2.mat'); % dynamic input current
 load('cur.mat'); % dynamic input current
 load('Pbatt.mat'); 
@@ -42,7 +42,7 @@ data.chrtime=1:tend_chr;
 data.power=data.power;
 data.power_index=data.power_index;
 tend= length(data.power_index);
-V0=3.7;
+V0=4.2;
 
 %% Finite difference for spherical particle and electrolyte
 p.Np=50;
@@ -60,8 +60,8 @@ Un0=p.c_s_n_max*theta_n_max*ones(p.Nn-1,1);
 % Temperature
 T10 = 298.15; %Core Temp.
 T20 = 298.15; %Surface Temp.
-% DailyT= [298.15 300.15 278.15 302.15 267 298 321 301 310 299]; %Lumped Temp. model is used!!
-DailyT= randi([273 340],1,5);
+% DailyT= [298.15 300.15]; %Lumped Temp. model is used!!
+DailyT= DailyTemp;
 % SEI
 Qs0=p.eps_s_n*p.Faraday*p.Area_n*p.L_n*p.c_s_n_max*p.theta_n_max/1.0844; %scaling to 2.7
 sei0=p.L_sei;
@@ -74,79 +74,86 @@ t0=tspan(1);
 x0 = [Un0; Up0; T10; T20; DailyT(1);Qs0; sei0]';
 func=@ode_SPMT_discharge;
 options=odeset('Events',@Efcn); 
+year=5;
 
+for i=1:year
 
-for j=1:length(DailyT)
-
-T0=DailyT(j);
-x0(:,end-2)=T0;
-% x0(:,(1:p.Nn-1))=p.c_s_n_max*theta_n_max*ones(p.Nn-1,1);
-% x0(:,(p.Nn):2*(p.Nn-1))=p.c_s_p_max*theta_p_min*ones(p.Np-1,1); 
-
-% Run integration until event function stops it
-options=odeset('Events',@Efcn); 
-[tDChr,xDChr] = ode23s(@(t,x) ode_SPMT_discharge(t,x,V0),[1:tend-1],x0,options); 
-
+    for j=1:length(DailyT)
     
-if (xDChr(end,49) <= p.c_s_n_max*p.theta_n_min || xDChr(end,49) > p.c_s_n_max*p.theta_n_min  || xDChr(end,98) >= p.c_s_p_max*p.theta_p_max)
+    T0=DailyT(j);
+    x0(:,end-2)=T0;
+    % x0(:,(1:p.Nn-1))=p.c_s_n_max*theta_n_max*ones(p.Nn-1,1);
+    % x0(:,(p.Nn):2*(p.Nn-1))=p.c_s_p_max*theta_p_min*ones(p.Np-1,1); 
+    
+    % Run integration until event function stops it
+    options=odeset('Events',@Efcn); 
+    [tDChr,xDChr] = ode23s(@(t,x) ode_SPMT_discharge(t,x,V0),[1:tend-1],x0,options); 
+    
+        
+    if (xDChr(end,49) <= p.c_s_n_max*p.theta_n_min || xDChr(end,49) > p.c_s_n_max*p.theta_n_min  || xDChr(end,98) >= p.c_s_p_max*p.theta_p_max)
+    
+        options=odeset('Events',@Efcn1);    
+        [tChr,xChr] = ode23s(@ode_SPMT_charge,[1:tend_chr],xDChr(end, :),options); 
+        x0=xChr(end,:);
+        flag=1
+    
+    end
+     
+            for k=1:length(tDChr)
+                [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), eta_n(k), eta_p(k), ...
+                     eta_sei_n(k), Qohmic(k),Qremv(k),R_tot_n(k),cur(k)]...
+                    =ode_SPMT_discharge(tDChr(k),xDChr(k,:)',V0);
+                SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
+                SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
+        
+            end
+            
+            years(i).days(j).DChr.Voltage=V_spm;
+            years(i).days(j).DChr.NLicon_n=theta_n;
+            years(i).days(j).DChr.NLicon_p=theta_p;
+            years(i).days(j).DChr.SOCn=SOCn;
+            years(i).days(j).DChr.SOCp=SOCp;
+            years(i).days(j).DChr.cur=cur;
+            years(i).days(j).DChr.Tcell=xDChr(:,end-2);
+            years(i).days(j).DChr.cn=xDChr(:,(p.Nn-1));
+            years(i).days(j).DChr.cp=xDChr(:,2*(p.Nn-1));
+            years(i).days(j).DChr.CLoss=xDChr(:,end-1)./3600;
+            years(i).days(j).DChr.SEIgrowth=xDChr(:,end);
+    
+            clear VChr_spm thetaChr_p thetaChr_n SOCn SOCp
+               for k=1:length(tChr)
+            [~,thetaChr_p(k),thetaChr_n(k),VChr_spm(k),V_ocv(k), eta_n(k), eta_p(k), ...
+                 eta_sei_n(k), Qohmic(k),Qremv(k),R_tot_n(k),cur(k)]...
+                =ode_SPMT_charge(tChr(k),xChr(k,:)');
+            SOCp(k)=( thetaChr_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
+            SOCn(k)=( thetaChr_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
+               end  
+    
+            years(i).days(j).Chr.Voltage=VChr_spm;
+            years(i).days(j).Chr.NLicon_n=thetaChr_n;
+            years(i).days(j).Chr.NLicon_p=thetaChr_p;
+            years(i).days(j).Chr.SOCn=SOCn;
+            years(i).days(j).Chr.SOCp=SOCp;
+            years(i).days(j).Chr.cur=cur;
+            years(i).days(j).Chr.Tcell=xChr(:,end-2);
+            years(i).days(j).Chr.cn=xChr(:,(p.Nn-1));
+            years(i).days(j).Chr.cp=xChr(:,2*(p.Nn-1));
+            years(i).days(j).Chr.CLoss=xChr(:,end-1)./3600;
+            years(i).days(j).Chr.SEIgrowth=xChr(:,end);
+           
+           
+    
+        theta_n_max=max(years(i).days(j).DChr.NLicon_n);
+        theta_p_min=min(years(i).days(j).DChr.NLicon_p);
+        
+      
+    end   
 
-    options=odeset('Events',@Efcn1);    
-    [tChr,xChr] = ode23s(@ode_SPMT_charge,[1:tend_chr],xDChr(end, :),options); 
     x0=xChr(end,:);
-    flag=1
 
 end
- 
-        for k=1:length(tDChr)
-            [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), eta_n(k), eta_p(k), ...
-                 eta_sei_n(k), Qohmic(k),Qremv(k),R_tot_n(k),cur(k)]...
-                =ode_SPMT_discharge(tDChr(k),xDChr(k,:)',V0);
-            SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
-            SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
-    
-        end
-        
-        day(j).DChr.Voltage=V_spm;
-        day(j).DChr.NLicon_n=theta_n;
-        day(j).DChr.NLicon_p=theta_p;
-        day(j).DChr.SOCn=SOCn;
-        day(j).DChr.SOCp=SOCp;
-        day(j).DChr.Tcell=xDChr(:,end-2);
-        day(j).DChr.cn=xDChr(:,(p.Nn-1));
-        day(j).DChr.cp=xDChr(:,2*(p.Nn-1));
-        day(j).DChr.CLoss=xDChr(:,end-1)./3600;
-        day(j).DChr.SEIgrowth=xDChr(:,end);
 
-        clear VChr_spm thetaChr_p thetaChr_n SOCn SOCp
-           for k=1:length(tChr)
-        [~,thetaChr_p(k),thetaChr_n(k),VChr_spm(k),V_ocv(k), eta_n(k), eta_p(k), ...
-             eta_sei_n(k), Qohmic(k),Qremv(k),R_tot_n(k),cur(k)]...
-            =ode_SPMT_charge(tChr(k),xChr(k,:)');
-        SOCp(k)=( thetaChr_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
-        SOCn(k)=( thetaChr_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
-           end  
-
-        day(j).Chr.Voltage=VChr_spm;
-        day(j).Chr.NLicon_n=thetaChr_n;
-        day(j).Chr.NLicon_p=thetaChr_p;
-        day(j).Chr.SOCn=SOCn;
-        day(j).Chr.SOCp=SOCp;
-        day(j).Chr.Tcell=xChr(:,end-2);
-        day(j).Chr.cn=xChr(:,(p.Nn-1));
-        day(j).Chr.cp=xChr(:,2*(p.Nn-1));
-        day(j).Chr.CLoss=xChr(:,end-1)./3600;
-        day(j).Chr.SEIgrowth=xChr(:,end);
-       
-       
-
-    theta_n_max=max(day(j).DChr.NLicon_n);
-    theta_p_min=min(day(j).DChr.NLicon_p);
-    
-  
-end      
-
-
-    
+toc
  
 
 
