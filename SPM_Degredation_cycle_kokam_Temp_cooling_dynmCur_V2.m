@@ -154,65 +154,10 @@ for i=1:year
 end
 
 toc
- 
-
-
-
-
-
-
-% for i=1:length(Tamb)*p.Nc
-%     for k=1:length(xtotal)
-%     [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
-%         k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
-%         =ode_SPMT_discharge(t(k),xtotal(k,:)');
-%     SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
-%     SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
-%     end
-%         for k=1:length(xtotal)
-%     [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), Ds_n(k), Ds_p(k), ...
-%         k_n(k), k_p(k), sn(k), sp(k), eta_sei_n(k), Qohmic(k),Qremv(k),T_dot(k),Q_dot(k),sei_dot(k),R_tot_n(k),BAh(k),cur(k)]...
-%         =ode_SPMT_charge(t(k),xtotal(k,:)');
-%     SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
-%     SOCn(k)=( theta_n(k)- p.theta_n_min )/( p.theta_n_max -p.theta_n_min);
-%     end
-% end
-% Ah(i)=integral(data.Current,0,duration(i));
-
-
 
  Qp=(p.Area_p*p.L_p*p.Faraday*p.eps_s_p*p.c_s_p_max*p.theta_p_max)/3600;
  Qn=(p.Area_n*p.L_n*p.Faraday*p.eps_s_n*p.c_s_n_max*p.theta_n_max)/3600;
-% 
-% 
-% Ah_th=cumsum(Ah)/3600;
-% Nc=linspace(0,Ah_th(end),length(Capacityloss));
-% Qloss=(Capacityloss/3600);
-% plot(Nc,(100*Qloss)/Qn,'.-'); xlabel('Ah - processed [Ah]');ylabel('Charge loss [%]');
-% grid on;
-% 
-% cycle=linspace(0,p.cycle_number,length(V_spm));
-% toc
-% 
-% figure
-% plot(cycle,V_spm,'.-');
-% xlabel('Cycle Number');
-% ylabel('Voltage [V]');
-% legend('');
-% grid on;
-% 
-% figure
-% plot(cycle,theta_n,'.-');
-% xlabel('Cycle Number');
-% ylabel('Negative electrode Li+ fraction');
-% grid on;
-% 
-% figure
-% plot(cycle,seigrowth,'.-'); 
-% xlabel('Cycle Number');
-% ylabel('Sei thickness [m]');
-% legend('FDM-SPM', 'SLIDE-SPM');
-% grid on;
+
 
 
 function [xdot,varargout]=ode_SPMT_discharge(t,x,V0)
