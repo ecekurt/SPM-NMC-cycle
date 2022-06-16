@@ -1,6 +1,6 @@
 %% KOKAM NMC battery SPM model with SEI effect
 % SLIDE Kokam NMC parameters
-% Every cycle starts with a different battery temperature independent of ambient temperature.
+% Every cycle starts with a different ambient temperature.
 % Cooling control was added. Temperature is controled by adjusting the convection coefficient h[W/(m2 K)]. 
 
 
@@ -24,21 +24,20 @@ global KokamOCVNMC KokamNMC
 global KokamOCVC KokamC
 global OCVcell
 
-%% Constant current input
 
-% Discharge only
- p.C_rate= 0.556;
- p.cycle_number=2;
- p.Nc= p.cycle_number*2;
 
+% Charge Input
+
+p.C_rate= 0.556;
+p.cycle_number=2;
+p.Nc= p.cycle_number*2;
 
 tend_chr= 3600*p.Nc/p.C_rate;
 data.chrcur=@(t) 0*(t==0) - 2.7*p.C_rate*(t<=1) + 2.7*p.C_rate*(1<=tend_chr); % charge current - constant charge
 data.chrtime=1:tend_chr;
 
-% data.cur=cur; %dynamic current
-% data.time=1:length(cur);
 
+% Discharge Input
 data.power=data.power;
 data.power_index=data.power_index;
 tend= length(data.power_index);
@@ -50,7 +49,9 @@ p.Nn=50;
 p.delta_p =  p.R_p/(p.Np);
 p.delta_n =  p.R_n/(p.Nn);  
 
-%% Initial concentration  of solid particles and electrolyte 
+%% Initial conditions 
+
+% Initial concentrations of solid particles
 
 theta_p_min=p.theta_p_min;
 theta_n_max=p.theta_n_max;
@@ -62,11 +63,12 @@ T10 = 298.15; %Core Temp.
 T20 = 298.15; %Surface Temp.
 % DailyT= [298.15 300.15]; %Lumped Temp. model is used!!
 DailyT= DailyTemp;
+
 % SEI
 Qs0=p.eps_s_n*p.Faraday*p.Area_n*p.L_n*p.c_s_n_max*p.theta_n_max/1.0844; %scaling to 2.7
 sei0=p.L_sei;
 
- tic  
+tic  
  
 % set up starting equation    
 tspan=0:1:tend;
@@ -82,14 +84,12 @@ for i=1:year
     
     T0=DailyT(j);
     x0(:,end-2)=T0;
-    % x0(:,(1:p.Nn-1))=p.c_s_n_max*theta_n_max*ones(p.Nn-1,1);
-    % x0(:,(p.Nn):2*(p.Nn-1))=p.c_s_p_max*theta_p_min*ones(p.Np-1,1); 
-    
+
     % Run integration until event function stops it
     options=odeset('Events',@Efcn); 
     [tDChr,xDChr] = ode23s(@(t,x) ode_SPMT_discharge(t,x,V0),[1:tend-1],x0,options); 
     
-        
+    % Check the concentrations at the surface of the particles     
     if (xDChr(end,49) <= p.c_s_n_max*p.theta_n_min || xDChr(end,49) > p.c_s_n_max*p.theta_n_min  || xDChr(end,98) >= p.c_s_p_max*p.theta_p_max)
     
         options=odeset('Events',@Efcn1);    
@@ -99,6 +99,7 @@ for i=1:year
     
     end
      
+     % Store the data
             for k=1:length(tDChr)
                 [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), eta_n(k), eta_p(k), ...
                      eta_sei_n(k), Qohmic(k),Qremv(k),R_tot_n(k),cur(k)]...
@@ -140,23 +141,17 @@ for i=1:year
             years(i).days(j).Chr.cp=xChr(:,2*(p.Nn-1));
             years(i).days(j).Chr.CLoss=xChr(:,end-1)./3600;
             years(i).days(j).Chr.SEIgrowth=xChr(:,end);
-           
-           
-    
-        theta_n_max=max(years(i).days(j).DChr.NLicon_n);
-        theta_p_min=min(years(i).days(j).DChr.NLicon_p);
-        
+                  
       
     end   
-
+    
+   % Update the initial state 
     x0=xChr(end,:);
 
 end
 
 toc
 
- Qp=(p.Area_p*p.L_p*p.Faraday*p.eps_s_p*p.c_s_p_max*p.theta_p_max)/3600;
- Qn=(p.Area_n*p.L_n*p.Faraday*p.eps_s_n*p.c_s_n_max*p.theta_n_max)/3600;
 
 
 
