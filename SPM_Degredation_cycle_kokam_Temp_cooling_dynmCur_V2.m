@@ -265,6 +265,11 @@ Q_dot= -Sn*is;
 
 js_n = (J_n) + (is/p.Faraday);
 
+% Lithium Loss [A]
+
+LLi=is*p.Area_n*p.L_n*p.a_n;
+
+
 % Solid particle concentration [mol m-3]
 
 c_p = A_p*U_p + B_p.*J_p;
@@ -293,7 +298,7 @@ varargout{2} = theta_n;
 varargout{3} = V_spm;
 varargout{4} = V_ocv;
 varargout{5} = eta_n;
-varargout{6} = eta_p;
+varargout{6} = LLi;
 varargout{7}= Uref_n;
 varargout{8}= Qohmic;
 varargout{9}= Qremv;
@@ -410,6 +415,10 @@ Q_dot= -Sn*is;
 
 js_n = (J_n) + (is/p.Faraday);
 
+% Lithium Loss [A]
+
+LLi=is*p.Area_n*p.L_n*p.a_n;
+
 % Solid particle concentration [mol m-3]
 
 c_p = A_p*U_p + B_p.*J_p;
@@ -440,7 +449,7 @@ varargout{2} = theta_n;
 varargout{3} = V_spm;
 varargout{4} = V_ocv;
 varargout{5} = eta_n;
-varargout{6} = eta_p;
+varargout{6} = LLİ;
 varargout{7}= Uref_n;
 varargout{8}= Qohmic;
 varargout{9}= Qremv;
