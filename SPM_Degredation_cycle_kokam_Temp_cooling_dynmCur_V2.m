@@ -68,12 +68,15 @@ DailyT= [298.15 320.15];
 Qs0=p.eps_s_n*p.Faraday*p.Area_n*p.L_n*p.c_s_n_max*p.theta_n_max/1.0844; %scaling to 2.7
 sei0=p.L_sei;
 
+%LLi
+LLi0=2.7;
+
 tic  
  
 % set up starting equation    
 tspan=0:1:tend;
 t0=tspan(1);
-x0 = [Un0; Up0; T10; T20; DailyT(1);Qs0; sei0]';
+x0 = [Un0; Up0; T10; T20; DailyT(1);Qs0; sei0; LLi0]';
 func=@ode_SPMT_discharge;
 options=odeset('Events',@Efcn); 
 year=1;
@@ -102,7 +105,7 @@ for i=1:year
      
      % Store the data
             for k=1:length(tDChr)
-                [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), eta_n(k), eta_p(k), ...
+                [~,theta_p(k),theta_n(k),V_spm(k),V_ocv(k), eta_n(k), LLi(k), ...
                      Uref_n(k), Qohmic(k),Qremv(k),R_tot_n(k),cur(k)]...
                     =ode_SPMT_discharge(tDChr(k),xDChr(k,:)',V0);
                 SOCp(k)=( theta_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
@@ -122,9 +125,9 @@ for i=1:year
             years(i).days(j).DChr.CLoss=xDChr(:,end-1)./3600;
             years(i).days(j).DChr.SEIgrowth=xDChr(:,end);
     
-            clear VChr_spm thetaChr_p thetaChr_n SOCn SOCp
+            clear VChr_spm thetaChr_p thetaChr_n SOCn SOCp cur
                for k=1:length(tChr)
-            [~,thetaChr_p(k),thetaChr_n(k),VChr_spm(k),V_ocv(k), eta_n(k), eta_p(k), ...
+            [~,thetaChr_p(k),thetaChr_n(k),VChr_spm(k),V_ocv(k), eta_n(k), LLi(k), ...
                      Uref_n(k), Qohmic(k),Qremv(k),R_tot_n(k),cur(k)]...
                 =ode_SPMT_charge(tChr(k),xChr(k,:)');
             SOCp(k)=( thetaChr_p(k)- p.theta_p_max )/( p.theta_p_min -p.theta_p_max);
@@ -149,6 +152,9 @@ for i=1:year
    % Update the initial states 
     x0=xChr(end,:);
     V0=max(VChr_spm);
+
+    
+
 end
 
 toc
@@ -166,12 +172,12 @@ global OCVcell
 
 U_n = x(1:(p.Nn-1));
 U_p = x(p.Nn : 2*(p.Nn-1));
-T1 = real(x(end-4));
-T2 = real(x(end-3));
-T  = real(x(end-2));
-Q_s= real(x(end-1));
-sei = real(x(end));
-
+T1 = real(x(end-5));
+T2 = real(x(end-4));
+T  = real(x(end-3));
+Q_s= real(x(end-2));
+sei = real(x(end-1));
+LLi = real(x(end));
 
 [cur,p.C_rate] = powerinput(data,V0,t,p);
 
@@ -267,7 +273,7 @@ js_n = (J_n) + (is/p.Faraday);
 
 % Lithium Loss [A]
 
-LLi=is*p.Area_n*p.L_n*p.a_n;
+LLi_dot=-is*p.Area_n*p.L_n*p.a_n;
 
 
 % Solid particle concentration [mol m-3]
@@ -291,7 +297,7 @@ Qgen= Qohmic + 0 + 0;
 T_dot= (Qgen  - Qremv)./(p.M*p.Cp);
 
 %% Outputs
-xdot = [c_n; c_p; real(T1_dot); real(T2_dot); real(T_dot); real(Q_dot); real(sei_dot)]; 
+xdot = [c_n; c_p; real(T1_dot); real(T2_dot); real(T_dot); real(Q_dot); real(sei_dot); real(LLi_dot)]; 
 
 varargout{1} = theta_p;
 varargout{2} = theta_n;
@@ -315,14 +321,14 @@ global KokamOCVNMC KokamNMC
 global KokamOCVC KokamC
 global OCVcell
 
-
 U_n = x(1:(p.Nn-1));
 U_p = x(p.Nn : 2*(p.Nn-1));
-T1 = real(x(end-4));
-T2 = real(x(end-3));
-T  = real(x(end-2));
-Q_s= real(x(end-1));
-sei = real(x(end));
+T1 = real(x(end-5));
+T2 = real(x(end-4));
+T  = real(x(end-3));
+Q_s= real(x(end-2));
+sei = real(x(end-1));
+LLi = real(x(end));
 
 
 cur=-data.chrcur(t);
@@ -409,7 +415,7 @@ R_tot_n = p.Rsei_n*sei + p.Rcell;
 
 % cyclable Li, evolution of the charge [C]
 
-Q_dot= -Sn*is;                                                                   
+Q_dot= Sn*is;                                                                   
 
 % Total molar flux [mol m-2 s-1]
 
@@ -417,7 +423,7 @@ js_n = (J_n) + (is/p.Faraday);
 
 % Lithium Loss [A]
 
-LLi=is*p.Area_n*p.L_n*p.a_n;
+LLi_dot=is*p.Area_n*p.L_n*p.a_n;
 
 % Solid particle concentration [mol m-3]
 
@@ -441,7 +447,7 @@ c_n = A_n*U_n + B_n.*js_n;
  
  
 %% Outputs
-xdot = [c_n; c_p; real(T1_dot); real(T2_dot); real(T_dot); real(Q_dot); real(sei_dot)]; 
+xdot = [c_n; c_p; real(T1_dot); real(T2_dot); real(T_dot); real(Q_dot); real(sei_dot); real(LLi_dot)]; 
 
 
 varargout{1} = theta_p;
@@ -449,7 +455,7 @@ varargout{2} = theta_n;
 varargout{3} = V_spm;
 varargout{4} = V_ocv;
 varargout{5} = eta_n;
-varargout{6} = LLİ;
+varargout{6} = LLi;
 varargout{7}= Uref_n;
 varargout{8}= Qohmic;
 varargout{9}= Qremv;
