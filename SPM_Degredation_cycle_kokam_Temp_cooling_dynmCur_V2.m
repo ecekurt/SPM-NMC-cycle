@@ -61,8 +61,8 @@ Un0=p.c_s_n_max*theta_n_max*ones(p.Nn-1,1);
 % Temperature
 T10 = 298.15; %Core Temp.
 T20 = 298.15; %Surface Temp.
-DailyT= [298.15 320.15]; 
-% DailyT= DailyTemp; % Real Temp. data for 366 days
+% DailyT= [298.15 320.15]; 
+DailyT= DailyTemp; % Real Temp. data for 366 days
 
 % SEI
 Qs0=p.eps_s_n*p.Faraday*p.Area_n*p.L_n*p.c_s_n_max*p.theta_n_max/1.0844; %scaling to 2.7
