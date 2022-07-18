@@ -1,39 +1,63 @@
 
-oneyear=years(1).days(1:360);
+oneyear=years(1).days(1:366);
 %%
 Closs=[];
 
-% for i=1:size(oneyear,2)
-% Closs=[Closs;oneyear(i).DChr.CLoss;oneyear(i).Chr.CLoss];
+for i=1:size(oneyear,2)
+Closs=[Closs;oneyear(i).DChr.CLoss;oneyear(i).Chr.CLoss];
+end
+% for i=1:size(years,2)
+% for k=1:size(years(i).days,2)
+%     Closs=[Closs;years(i).days(k).DChr.CLoss;years(i).days(k).Chr.CLoss];
 % end
-for i=1:size(years,2)
-for k=1:size(years(i).days,2)
-    Closs=[Closs;years(i).days(k).DChr.CLoss;years(i).days(k).Chr.CLoss];
+% end
+%%
+seicell=[];
+% for i=1:size(oneyear,2)
+% Tcell=[Tcell; oneyear(i).DChr.Tcell; oneyear(i).Chr.Tcell];
+% end
+for i=1:size(oneyear,2)
+seicell=[seicell;oneyear(i).DChr.SEIgrowth;oneyear(i).Chr.SEIgrowth];
 end
-end
-
 %%
 
 Tcell=[];
 % for i=1:size(oneyear,2)
 % Tcell=[Tcell; oneyear(i).DChr.Tcell; oneyear(i).Chr.Tcell];
 % end
+for i=1:size(oneyear,2)
+Tcell=[Tcell;oneyear(i).DChr.Tcell;oneyear(i).Chr.Tcell];
+end
+
 for i=1:size(years,2)
 for k=1:size(years(i).days,2)
     Tcell=[Tcell;years(i).days(k).DChr.Tcell;years(i).days(k).Chr.Tcell];
 end
 end
+
 %%
 
-cur=[];
+seigrowth=[];
 % for i=1:size(oneyear,2)
 % Tcell=[Tcell; oneyear(i).DChr.Tcell; oneyear(i).Chr.Tcell];
 % end
 for i=1:size(years,2)
 for k=1:size(years(i).days,2)
-     cur=[cur;years(i).days(k).DChr.cur';years(i).days(k).Chr.cur'];
+    seigrowth=[seigrowth;years(i).days(k).DChr.SEIgrowth;years(i).days(k).Chr.SEIgrowth];
 end
 end
+
+%%
+
+cur=[];
+for i=1:size(years,2)
+cur=[cur; years(1).days(1).DChr.cur'; years(1).days(1).Chr.cur'];
+end
+% for i=1:size(years,2)
+% for k=1:size(years(i).days,2)
+%      cur=[cur;years(i).days(k).DChr.cur';years(i).days(k).Chr.cur'];
+% end
+% end
 
 %%
 temp=Tcell;
@@ -82,3 +106,15 @@ for i=2:length(temp)
     
 end
 cap_loss=cyc_loss(end);
+
+plot(linspace(0,15,length(Closs)),(Closs(1)-Closs)/Closs(1)*100,'LineWidth',1)
+hold on 
+plot(linspace(0,15,length(Closs)),cyc_loss*100,'LineWidth',2)
+xlabel('time [years]'); ylabel('Capacity loss [%]');
+legend('Empirical model', 'Physics based model')
+grid on
+figure
+Nc=linspace(1,366,length(Closs));
+Qloss=(Closs/1.084/3600);
+plot(Nc,(100*Qloss)/Qloss(1),'LineWidth',1); xlabel('time [days]');ylabel('SoH [%]');
+grid on;
